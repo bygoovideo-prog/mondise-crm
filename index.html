@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MONDISE CRM</title>
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <style>
+      :root{--brand:#1e40af;--accent:#0f172a;--gray:#6b7280}
+      body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial}
+      .btn{padding:10px 14px;border-radius:10px;border:1px solid var(--brand);background:var(--brand);color:white}
+      .btn.secondary{background:#fff;color:#111;border-color:#ddd}
+      input,select{padding:10px;border:1px solid #ccc;border-radius:8px;width:100%}
+      label{font-size:12px;color:#334155;display:grid;gap:6px}
+      .card{border:1px solid #e5e7eb;border-radius:12px;padding:12px}
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
