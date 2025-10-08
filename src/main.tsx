@@ -106,7 +106,7 @@ export default function MainApp() {
       <header className="app-header">
   <div className="app-content" style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:16}}>
     <div className="brand">
-      <img src="/logo-mondise-white.png" alt="Mondise CRM" />
+      <img src="/logotipo-mondise.png" alt="Mondise CRM" />
       <strong>MONDISE CRM</strong>
     </div>
     <nav className="tabs">
