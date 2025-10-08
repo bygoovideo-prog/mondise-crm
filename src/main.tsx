@@ -19,6 +19,73 @@ import {
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import './styles.css';
+// 👇 PEGA AQUÍ (aprox línea 12 de tu archivo src/main.tsx)
+export default function MainApp() {
+  const [tab, setTab] = useState<'tareas' | 'clientes'>('tareas');
+
+  return (
+    <div className="app-shell">
+      <header className="app-header">
+        <div className="header-inner">
+          <div className="brand">
+            <img
+              src="/logo-mondise-white.png"
+              alt="MONDISE CRM"
+              className="brand-logo"
+            />
+            <strong className="brand-title">MONDISE CRM</strong>
+          </div>
+        </div>
+
+        <div className="tabs hide-mobile">
+          <button
+            className={`tab ${tab === 'tareas' ? 'active' : ''}`}
+            onClick={() => setTab('tareas')}
+          >
+            <ClipboardList size={18} /> Tareas
+          </button>
+          <button
+            className={`tab ${tab === 'clientes' ? 'active' : ''}`}
+            onClick={() => setTab('clientes')}
+          >
+            <Users size={18} /> Clientes
+          </button>
+        </div>
+      </header>
+
+      <main className="main-scroll app-content">
+        {tab === 'tareas' ? <TasksView /> : <ClientsView />}
+      </main>
+
+      {tab === 'tareas' && (
+        <button
+          className="fab only-mobile"
+          aria-label="Nueva tarea"
+          onClick={() => window.dispatchEvent(new CustomEvent('new-task'))}
+        >
+          <Plus size={24} />
+        </button>
+      )}
+
+      <nav className="bottom-nav only-mobile">
+        <button
+          className={`nav-btn ${tab === 'tareas' ? 'active' : ''}`}
+          onClick={() => setTab('tareas')}
+        >
+          <ClipboardList size={20} />
+          <span className="nav-label">Tareas</span>
+        </button>
+        <button
+          className={`nav-btn ${tab === 'clientes' ? 'active' : ''}`}
+          onClick={() => setTab('clientes')}
+        >
+          <Users size={20} />
+          <span className="nav-label">Clientes</span>
+        </button>
+      </nav>
+    </div>
+  );
+}
 
 // ===== Tipos que mapean las tablas =====
 type TaskRow = {
@@ -370,6 +437,12 @@ function ClientsView(){
   );
 }
 // ===== Montar la App (Vite/React) =====
+const container = document.getElementById('root');
+if (container) {
+  createRoot(container).render(<MainApp />);
+}
+import { createRoot } from 'react-dom/client';
+
 const container = document.getElementById('root');
 if (container) {
   createRoot(container).render(<MainApp />);
