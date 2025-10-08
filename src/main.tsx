@@ -33,6 +33,57 @@ type ClientRow = {
 
 // =============================== App Shell ================================
 type Tab = 'tareas' | 'clientes';
+// ====== Hook de TAREAS + CRUD (Supabase) ======
+function useTasks() {
+  const [tasks, setTasks] = React.useState<TaskRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    setError(null);
+    const { data, error } = await supabase
+      .from('tareas')
+      .select('*')
+      .order('fecha', { ascending: true })
+      .order('created_at', { ascending: false });
+
+    if (error) setError(error.message);
+    setTasks((data || []) as TaskRow[]);
+    setLoading(false);
+  };
+
+  React.useEffect(() => { load(); }, []);
+
+  return { tasks, loading, error, refresh: load, setTasks };
+}
+
+// CRUD helpers
+async function createTask(payload: Omit<TaskRow, 'id'>) {
+  const { data, error } = await supabase
+    .from('tareas')
+    .insert(payload)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as TaskRow;
+}
+
+async function setTaskDone(id: string) {
+  const { data, error } = await supabase
+    .from('tareas')
+    .update({ estado: 'hecha' })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as TaskRow;
+}
+
+async function deleteTask(id: string) {
+  const { error } = await supabase.from('tareas').delete().eq('id', id);
+  if (error) throw error;
+}
 
 export default function MainApp() {
   const [tab, setTab] = useState<Tab>('tareas');
@@ -107,43 +158,86 @@ export default function MainApp() {
 
 // =============================== VISTA: Tareas ===============================
 function TasksView() {
-  // ⚠️ Aquí sustituye MOCK_TASKS por tus datos desde Supabase:
-  const tasks = MOCK_TASKS;
+  const { tasks, loading, error, refresh, setTasks } = useTasks();
 
-  // Búsqueda simple (puedes enlazar a tu estado)
-  const [q, setQ] = useState('');
-  const filtered = useMemo(() => {
+  const [q, setQ] = React.useState('');
+  const filtered = React.useMemo(() => {
     const t = q.trim().toLowerCase();
     if (!t) return tasks;
     return tasks.filter(x =>
       x.titulo.toLowerCase().includes(t) ||
-      x.departamento.toLowerCase().includes(t)
+      (x.departamento || '').toLowerCase().includes(t) ||
+      (x.estado || '').toLowerCase().includes(t)
     );
   }, [q, tasks]);
 
+  const [titulo, setTitulo] = React.useState('');
+  const [fecha, setFecha] = React.useState<string>('');
+  const [estado, setEstado] = React.useState('pendiente');
+  const [departamento, setDepartamento] = React.useState('comercial');
+  const [descripcion, setDescripcion] = React.useState('');
+
+  const onCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        titulo,
+        fecha: fecha || null,
+        estado,
+        departamento,
+        descripcion: descripcion || null,
+      };
+      const newRow = await createTask(payload);
+      setTasks(prev => [newRow, ...prev]);
+      setTitulo(''); setFecha(''); setEstado('pendiente'); setDepartamento('comercial'); setDescripcion('');
+    } catch (err: any) {
+      alert('Error creando tarea: ' + err.message);
+    }
+  };
+
+  const onDone = async (id: string) => {
+    try {
+      const updated = await setTaskDone(id);
+      setTasks(prev => prev.map(t => t.id === id ? updated : t));
+    } catch (err: any) {
+      alert('Error marcando como hecha: ' + err.message);
+    }
+  };
+
+  const onDelete = async (id: string) => {
+    if (!confirm('¿Borrar esta tarea?')) return;
+    try {
+      await deleteTask(id);
+      setTasks(prev => prev.filter(t => t.id !== id));
+    } catch (err: any) {
+      alert('Error borrando: ' + err.message);
+    }
+  };
+
   return (
     <>
-      {/* Buscador */}
       <div className="panel">
         <div className="search">
           <Search size={18} />
           <input
             value={q}
             onChange={e => setQ(e.target.value)}
-            placeholder="Buscar tarea, departamento..."
+            placeholder="Buscar tarea, estado o departamento…"
           />
+          <button className="icon-btn" title="Refrescar" onClick={refresh}><RefreshCw size={16}/></button>
         </div>
+        {loading && <div className="meta" style={{marginTop:8}}>Cargando…</div>}
+        {error && <div className="meta" style={{marginTop:8, color:'#ff9b9b'}}>Error: {error}</div>}
       </div>
 
-      {/* Grid de tarjetas */}
       <div className="grid">
         {filtered.map(t => (
           <article key={t.id} className="card">
             <div className="meta">
-              <span className={`badge ${badgeByEstado(t.estado)}`}>
-                {labelEstado(t.estado)}
+              <span className={`badge ${t.estado === 'hecha' ? 'ok' : t.estado === 'pendiente' ? 'warn' : ''}`}>
+                {t.estado || 'pendiente'}
               </span>
-              <span className="badge">{t.departamento}</span>
+              {t.departamento && <span className="badge">{t.departamento}</span>}
               {t.fecha && (
                 <span className="meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   <Calendar size={14} /> {t.fecha}
@@ -154,13 +248,10 @@ function TasksView() {
             {t.descripcion && <div className="meta">{t.descripcion}</div>}
 
             <div className="row-actions">
-              <button className="btn ok" title="Marcar hecha">
+              <button className="btn ok" onClick={() => onDone(t.id)}>
                 <CheckCircle2 size={16} /> Hecha
               </button>
-              <button className="btn" title="Editar">
-                <Edit3 size={16} /> Editar
-              </button>
-              <button className="btn danger" title="Borrar">
+              <button className="btn danger" onClick={() => onDelete(t.id)}>
                 <Trash2 size={16} /> Borrar
               </button>
             </div>
@@ -168,21 +259,20 @@ function TasksView() {
         ))}
       </div>
 
-      {/* Formulario (ejemplo) */}
       <div className="panel" style={{ marginTop: 16 }}>
         <h4 style={{ marginTop: 0, marginBottom: 12 }}>Nueva tarea</h4>
-        <form className="form" onSubmit={(e)=>{e.preventDefault(); /* TODO: crear en Supabase */}}>
+        <form className="form" onSubmit={onCreate}>
           <div className="row">
-            <input className="input" placeholder="Título" required />
-            <input className="input" type="date" />
+            <input className="input" placeholder="Título" required value={titulo} onChange={e=>setTitulo(e.target.value)} />
+            <input className="input" type="date" value={fecha} onChange={e=>setFecha(e.target.value)} />
           </div>
           <div className="row">
-            <select className="select" defaultValue="pendiente">
+            <select className="select" value={estado} onChange={e=>setEstado(e.target.value)}>
               <option value="pendiente">Pendiente</option>
               <option value="en progreso">En progreso</option>
               <option value="hecha">Hecha</option>
             </select>
-            <select className="select" defaultValue="comercial">
+            <select className="select" value={departamento} onChange={e=>setDepartamento(e.target.value)}>
               <option value="comercial">Comercial</option>
               <option value="técnico">Técnico</option>
               <option value="envíos">Envíos</option>
@@ -190,7 +280,7 @@ function TasksView() {
               <option value="administración">Administración</option>
             </select>
           </div>
-          <textarea className="textarea" placeholder="Descripción" />
+          <textarea className="textarea" placeholder="Descripción" value={descripcion} onChange={e=>setDescripcion(e.target.value)} />
           <div className="row-actions">
             <button className="btn ok" type="submit">
               <Plus size={16} /> Guardar
@@ -201,16 +291,7 @@ function TasksView() {
     </>
   );
 }
-function labelEstado(e: Task['estado']){
-  if(e==='pendiente') return 'Pendiente';
-  if(e==='en progreso') return 'En progreso';
-  return 'Hecha';
-}
-function badgeByEstado(e: Task['estado']){
-  if(e==='pendiente') return 'warn';
-  if(e==='en progreso') return '';
-  return 'ok';
-}
+
 
 // ============================== VISTA: Clientes ==============================
 function ClientsView(){
