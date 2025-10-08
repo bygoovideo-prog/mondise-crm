@@ -1,4 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { createRoot } from 'react-dom/client';       // ⬅️ NUEVO
+import './styles.css';                               // ⬅️ NUEVO
+
+import {
+  Plus, ClipboardList, Users, RefreshCw, LogOut,
+  Search, Calendar, Edit3, Trash2, CheckCircle2, Building2, Phone, Mail
+} from 'lucide-react';
+
+// ⬇️ Corrige la ruta de supabase (está en src/)
+import { supabase } from './supabaseClient';         // ⬅️ ANTES decía ../supabaseClient
+
+import React, { useEffect, useMemo, useState } from 'react';
 
 import {
   Plus, ClipboardList, Users, RefreshCw, LogOut,
@@ -354,6 +366,11 @@ function ClientsView(){
       </div>
     </>
   );
+}
+// ===== Montar la App (Vite/React) =====
+const container = document.getElementById('root');
+if (container) {
+  createRoot(container).render(<MainApp />);
 }
 
 
