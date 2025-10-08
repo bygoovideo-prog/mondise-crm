@@ -17,6 +17,7 @@ import {
   Search, Calendar, Edit3, Trash2, CheckCircle2, Building2, Phone, Mail
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
+import './styles.css';
 
 // ===== Tipos que mapean las tablas =====
 type TaskRow = {
