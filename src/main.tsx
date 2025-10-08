@@ -3,6 +3,29 @@ import {
   Plus, ClipboardList, Users, RefreshCw, LogOut,
   Search, Calendar, Edit3, Trash2, CheckCircle2, Building2, Phone, Mail
 } from 'lucide-react';
+import { supabase } from '../supabaseClient';
+
+// ===== Tipos que mapean las tablas =====
+type TaskRow = {
+  id: string;
+  titulo: string;
+  fecha: string | null;           // ISO date string (YYYY-MM-DD) o null
+  estado: string | null;          // 'pendiente' | 'en progreso' | 'hecha' | null
+  departamento: string | null;    // 'comercial' | 'técnico' | 'envíos' | 'pedidos' | 'administración' | null
+  descripcion: string | null;
+  created_at?: string | null;
+};
+
+type ClientRow = {
+  id: string;
+  empresa: string;
+  contacto?: string | null;
+  telefono?: string | null;
+  email?: string | null;
+  direccion?: string | null;
+  notas?: string | null;
+  created_at?: string | null;
+};
 
 // ================ Mock de datos (sustituye con Supabase) =================
 type Task = {
@@ -23,17 +46,7 @@ type Client = {
   notas?: string;
 };
 
-const MOCK_TASKS: Task[] = [
-  { id: 't1', titulo: 'Llamar a Hotel Demo', estado: 'pendiente', departamento: 'comercial', fecha: '2025-10-07', descripcion: 'Confirmar oferta y fecha de instalación' },
-  { id: 't2', titulo: 'Revisar cerradura TTLock', estado: 'pendiente', departamento: 'técnico', fecha: '2025-10-07', descripcion: 'Comprobar firmware y logs' },
-  { id: 't3', titulo: 'Emitir factura Hotel Demo', estado: 'pendiente', departamento: 'administración', fecha: '2025-10-08', descripcion: 'Proforma tras confirmación' },
-  { id: 't4', titulo: 'Enviar paquetes semana', estado: 'en progreso', departamento: 'envíos' },
-];
 
-const MOCK_CLIENTS: Client[] = [
-  { id: 'c1', empresa: 'Hotel Demo', contacto: 'María Pérez', telefono: '+34 600 111 222', email: 'maria@hotel.demo', direccion: 'C/ Sol 10, Sevilla', notas: 'Cliente de prueba' },
-  { id: 'c2', empresa: 'Hostal Centro', contacto: 'J. Gómez', telefono: '+34 655 000 111', email: 'info@hostalcentro.es', direccion: 'Av. Libertad 22, Málaga' },
-];
 
 // =============================== App Shell ================================
 type Tab = 'tareas' | 'clientes';
