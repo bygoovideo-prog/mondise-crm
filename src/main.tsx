@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+
 import {
   Plus, ClipboardList, Users, RefreshCw, LogOut,
   Search, Calendar, Edit3, Trash2, CheckCircle2, Building2, Phone, Mail
@@ -27,24 +28,6 @@ type ClientRow = {
   created_at?: string | null;
 };
 
-// ================ Mock de datos (sustituye con Supabase) =================
-type Task = {
-  id: string;
-  titulo: string;
-  fecha?: string;
-  estado: 'pendiente' | 'en progreso' | 'hecha';
-  departamento: 'comercial' | 'técnico' | 'envíos' | 'pedidos' | 'administración';
-  descripcion?: string;
-};
-type Client = {
-  id: string;
-  empresa: string;
-  contacto?: string;
-  telefono?: string;
-  email?: string;
-  direccion?: string;
-  notas?: string;
-};
 
 
 
