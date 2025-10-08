@@ -1,3 +1,4 @@
+import './styles.css';
 import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';       // ⬅️ NUEVO
 import './styles.css';                               // ⬅️ NUEVO
