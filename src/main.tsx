@@ -92,38 +92,28 @@ export default function MainApp() {
     <div className="app">
       {/* Header */}
       <header className="app-header">
-        <div className="header-inner">
-          <div className="brand">
-            <div className="brand-logo" />
-            <div className="brand-title">MONDISE CRM</div>
-          </div>
+  <div className="app-content" style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:16}}>
+    <div className="brand">
+      <img src="/logo-mondise-white.png" alt="Mondise CRM" />
+      <strong>MONDISE CRM</strong>
+    </div>
+    <nav className="tabs">
+      <button
+        className={`tab-btn ${tab === 'tareas' ? 'active' : ''}`}
+        onClick={() => setTab('tareas')}
+      >
+        🗂️ Tareas
+      </button>
+      <button
+        className={`tab-btn ${tab === 'clientes' ? 'active' : ''}`}
+        onClick={() => setTab('clientes')}
+      >
+        👥 Clientes
+      </button>
+    </nav>
+  </div>
+</header>
 
-          <div className="header-actions">
-            <button className="icon-btn" title="Refrescar">
-              <RefreshCw size={18} />
-            </button>
-            <button className="icon-btn" title="Salir">
-              <LogOut size={18} />
-            </button>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="tabs">
-          <button
-            className={`tab ${tab === 'tareas' ? 'active' : ''}`}
-            onClick={() => setTab('tareas')}
-          >
-            <ClipboardList size={18} /> Tareas
-          </button>
-          <button
-            className={`tab ${tab === 'clientes' ? 'active' : ''}`}
-            onClick={() => setTab('clientes')}
-          >
-            <Users size={18} /> Clientes
-          </button>
-        </div>
-      </header>
 
       {/* Contenido */}
       <main className="app-content">
