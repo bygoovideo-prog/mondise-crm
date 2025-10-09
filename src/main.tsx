@@ -1,24 +1,15 @@
-import './styles.css';
+// ==== CABECERA LIMPIA DE src/main.tsx ====
 import React, { useEffect, useMemo, useState } from 'react';
-import { createRoot } from 'react-dom/client';       // ⬅️ NUEVO
-import './styles.css';                               // ⬅️ NUEVO
+import { createRoot } from 'react-dom/client';
+import './styles.css';  // importa tu diseño oscuro Mondise
 
 import {
   Plus, ClipboardList, Users, RefreshCw, LogOut,
   Search, Calendar, Edit3, Trash2, CheckCircle2, Building2, Phone, Mail
 } from 'lucide-react';
 
-// ⬇️ Corrige la ruta de supabase (está en src/)
-import { supabase } from './supabaseClient';         // ⬅️ ANTES decía ../supabaseClient
+import { supabase } from './supabaseClient'; // ✅ corregida la ruta (antes ponía ../)
 
-import React, { useEffect, useMemo, useState } from 'react';
-
-import {
-  Plus, ClipboardList, Users, RefreshCw, LogOut,
-  Search, Calendar, Edit3, Trash2, CheckCircle2, Building2, Phone, Mail
-} from 'lucide-react';
-import { supabase } from '../supabaseClient';
-import './styles.css';
 // 👇 PEGA AQUÍ (aprox línea 12 de tu archivo src/main.tsx)
 export default function MainApp() {
   const [tab, setTab] = useState<'tareas' | 'clientes'>('tareas');
@@ -440,12 +431,5 @@ function ClientsView(){
 const container = document.getElementById('root');
 if (container) {
   createRoot(container).render(<MainApp />);
-}
-import { createRoot } from 'react-dom/client';
-
-const container = document.getElementById('root');
-if (container) {
-  createRoot(container).render(<MainApp />);
-}
 
 
