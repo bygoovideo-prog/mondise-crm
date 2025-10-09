@@ -1,88 +1,20 @@
 // ==== CABECERA LIMPIA DE src/main.tsx ====
 import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import './styles.css';  // importa tu diseño oscuro Mondise
+import './styles.css';
 
 import {
   Plus, ClipboardList, Users, RefreshCw, LogOut,
   Search, Calendar, Edit3, Trash2, CheckCircle2, Building2, Phone, Mail
 } from 'lucide-react';
 
-import { supabase } from './supabaseClient'; // ✅ corregida la ruta (antes ponía ../)
-
-// 👇 PEGA AQUÍ (aprox línea 12 de tu archivo src/main.tsx)
-export default function MainApp() {
-  const [tab, setTab] = useState<'tareas' | 'clientes'>('tareas');
-
-  return (
-    <div className="app-shell">
-      <header className="app-header">
-        <div className="header-inner">
-          <div className="brand">
-            <img
-              src="/logo-mondise-white.png"
-              alt="MONDISE CRM"
-              className="brand-logo"
-            />
-            <strong className="brand-title">MONDISE CRM</strong>
-          </div>
-        </div>
-
-        <div className="tabs hide-mobile">
-          <button
-            className={`tab ${tab === 'tareas' ? 'active' : ''}`}
-            onClick={() => setTab('tareas')}
-          >
-            <ClipboardList size={18} /> Tareas
-          </button>
-          <button
-            className={`tab ${tab === 'clientes' ? 'active' : ''}`}
-            onClick={() => setTab('clientes')}
-          >
-            <Users size={18} /> Clientes
-          </button>
-        </div>
-      </header>
-
-      <main className="main-scroll app-content">
-        {tab === 'tareas' ? <TasksView /> : <ClientsView />}
-      </main>
-
-      {tab === 'tareas' && (
-        <button
-          className="fab only-mobile"
-          aria-label="Nueva tarea"
-          onClick={() => window.dispatchEvent(new CustomEvent('new-task'))}
-        >
-          <Plus size={24} />
-        </button>
-      )}
-
-      <nav className="bottom-nav only-mobile">
-        <button
-          className={`nav-btn ${tab === 'tareas' ? 'active' : ''}`}
-          onClick={() => setTab('tareas')}
-        >
-          <ClipboardList size={20} />
-          <span className="nav-label">Tareas</span>
-        </button>
-        <button
-          className={`nav-btn ${tab === 'clientes' ? 'active' : ''}`}
-          onClick={() => setTab('clientes')}
-        >
-          <Users size={20} />
-          <span className="nav-label">Clientes</span>
-        </button>
-      </nav>
-    </div>
-  );
-}
+import { supabase } from './supabaseClient';
 
 // ===== Tipos que mapean las tablas =====
 type TaskRow = {
   id: string;
   titulo: string;
-  fecha: string | null;           // ISO date string (YYYY-MM-DD) o null
+  fecha: string | null;           // YYYY-MM-DD o null
   estado: string | null;          // 'pendiente' | 'en progreso' | 'hecha' | null
   departamento: string | null;    // 'comercial' | 'técnico' | 'envíos' | 'pedidos' | 'administración' | null
   descripcion: string | null;
@@ -100,16 +32,11 @@ type ClientRow = {
   created_at?: string | null;
 };
 
-
-
-
-// =============================== App Shell ================================
-type Tab = 'tareas' | 'clientes';
-// ====== Hook de TAREAS + CRUD (Supabase) ======
+// ===== Hook de TAREAS + CRUD =====
 function useTasks() {
-  const [tasks, setTasks] = React.useState<TaskRow[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+  const [tasks, setTasks] = useState<TaskRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -125,12 +52,11 @@ function useTasks() {
     setLoading(false);
   };
 
-  React.useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, []);
 
   return { tasks, loading, error, refresh: load, setTasks };
 }
 
-// CRUD helpers
 async function createTask(payload: Omit<TaskRow, 'id'>) {
   const { data, error } = await supabase
     .from('tareas')
@@ -157,73 +83,135 @@ async function deleteTask(id: string) {
   if (error) throw error;
 }
 
+// ===== Hook de CLIENTES + CRUD =====
+function useClients() {
+  const [clients, setClients] = useState<ClientRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    setError(null);
+    const { data, error } = await supabase
+      .from('clientes')
+      .select('*')
+      .order('empresa', { ascending: true });
+    if (error) setError(error.message);
+    setClients((data || []) as ClientRow[]);
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  return { clients, loading, error, refresh: load, setClients };
+}
+
+async function createClient(payload: Omit<ClientRow, 'id'>) {
+  const { data, error } = await supabase
+    .from('clientes')
+    .insert(payload)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as ClientRow;
+}
+
+async function deleteClient(id: string) {
+  const { error } = await supabase.from('clientes').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// ===================== SHELL PRINCIPAL =====================
 export default function MainApp() {
-  const [tab, setTab] = useState<Tab>('tareas');
+  const [tab, setTab] = useState<'tareas' | 'clientes'>('tareas');
 
   return (
-    <div className="app">
+    <div className="app-shell">
       {/* Header */}
       <header className="app-header">
-  <div className="app-content" style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:16}}>
-    <div className="brand">
-      <img src="/logotipo-mondise.png" alt="Mondise CRM" />
-      <strong>MONDISE CRM</strong>
-    </div>
-    <nav className="tabs">
-      <button
-        className={`tab-btn ${tab === 'tareas' ? 'active' : ''}`}
-        onClick={() => setTab('tareas')}
-      >
-        🗂️ Tareas
-      </button>
-      <button
-        className={`tab-btn ${tab === 'clientes' ? 'active' : ''}`}
-        onClick={() => setTab('clientes')}
-      >
-        👥 Clientes
-      </button>
-    </nav>
-  </div>
-</header>
+        <div className="header-inner">
+          <div className="brand">
+            <img
+              src="/logo-mondise-white.png"   // asegúrate de tenerlo en /public/
+              alt="MONDISE CRM"
+              className="brand-logo"
+            />
+            <strong className="brand-title">MONDISE CRM</strong>
+          </div>
 
+          <div className="header-actions">
+            <button className="icon-btn" title="Refrescar" onClick={() => window.location.reload()}>
+              <RefreshCw size={18} />
+            </button>
+            <button className="icon-btn" title="Salir">
+              <LogOut size={18} />
+            </button>
+          </div>
+        </div>
+
+        {/* Tabs superiores (escritorio) */}
+        <div className="tabs hide-mobile">
+          <button
+            className={`tab ${tab === 'tareas' ? 'active' : ''}`}
+            onClick={() => setTab('tareas')}
+          >
+            <ClipboardList size={18} /> Tareas
+          </button>
+          <button
+            className={`tab ${tab === 'clientes' ? 'active' : ''}`}
+            onClick={() => setTab('clientes')}
+          >
+            <Users size={18} /> Clientes
+          </button>
+        </div>
+      </header>
 
       {/* Contenido */}
-      <main className="app-content">
-        {tab === 'tareas' ? <TasksView /> : <ClientsView />}
+      <main className="main-scroll">
+        <div className="app-content" style={{ paddingTop: 16 }}>
+          {tab === 'tareas' ? <TasksView /> : <ClientsView />}
+        </div>
       </main>
 
-      {/* FAB para crear nuevo */}
-      <button className="fab" title="Nueva">
-        <Plus size={22} />
-      </button>
+      {/* FAB (solo en Tareas) */}
+      {tab === 'tareas' && (
+        <button
+          className="fab only-mobile"
+          onClick={() => window.dispatchEvent(new CustomEvent('new-task'))}
+          aria-label="Nueva tarea"
+        >
+          <Plus size={22} />
+        </button>
+      )}
 
-      {/* Bottom nav (estético; si tienes router, puedes enlazar) */}
-      <nav className="bottom-nav">
-        <div
-          className={`nav-item ${tab === 'tareas' ? 'active' : ''}`}
+      {/* Bottom nav móvil */}
+      <nav className="bottom-nav only-mobile" role="navigation" aria-label="Navegación inferior">
+        <button
+          className={`nav-btn ${tab === 'tareas' ? 'active' : ''}`}
           onClick={() => setTab('tareas')}
         >
-          <ClipboardList size={18} />
+          <ClipboardList size={20} />
           <span className="nav-label">Tareas</span>
-        </div>
-        <div
-          className={`nav-item ${tab === 'clientes' ? 'active' : ''}`}
+        </button>
+        <button
+          className={`nav-btn ${tab === 'clientes' ? 'active' : ''}`}
           onClick={() => setTab('clientes')}
         >
-          <Users size={18} />
+          <Users size={20} />
           <span className="nav-label">Clientes</span>
-        </div>
+        </button>
       </nav>
     </div>
   );
 }
 
-// =============================== VISTA: Tareas ===============================
+// ===================== VISTA: TAREAS =====================
 function TasksView() {
   const { tasks, loading, error, refresh, setTasks } = useTasks();
 
-  const [q, setQ] = React.useState('');
-  const filtered = React.useMemo(() => {
+  // búsqueda
+  const [q, setQ] = useState('');
+  const filtered = useMemo(() => {
     const t = q.trim().toLowerCase();
     if (!t) return tasks;
     return tasks.filter(x =>
@@ -233,21 +221,33 @@ function TasksView() {
     );
   }, [q, tasks]);
 
-  const [titulo, setTitulo] = React.useState('');
-  const [fecha, setFecha] = React.useState<string>('');
-  const [estado, setEstado] = React.useState('pendiente');
-  const [departamento, setDepartamento] = React.useState('comercial');
-  const [descripcion, setDescripcion] = React.useState('');
+  // form nueva tarea
+  const [titulo, setTitulo] = useState('');
+  const [fecha, setFecha] = useState<string>('');
+  const [estado, setEstado] = useState('pendiente');
+  const [departamento, setDepartamento] = useState('comercial');
+  const [descripcion, setDescripcion] = useState('');
+
+  // Escuchar FAB móvil
+  useEffect(() => {
+    const handler = () => {
+      const el = document.getElementById('titulo-input');
+      if (el) (el as HTMLInputElement).focus();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    window.addEventListener('new-task', handler);
+    return () => window.removeEventListener('new-task', handler);
+  }, []);
 
   const onCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const payload = {
+      const payload: Omit<TaskRow,'id'> = {
         titulo,
         fecha: fecha || null,
         estado,
         departamento,
-        descripcion: descripcion || null,
+        descripcion: descripcion || null
       };
       const newRow = await createTask(payload);
       setTasks(prev => [newRow, ...prev]);
@@ -278,6 +278,7 @@ function TasksView() {
 
   return (
     <>
+      {/* Buscador */}
       <div className="panel">
         <div className="search">
           <Search size={18} />
@@ -292,6 +293,7 @@ function TasksView() {
         {error && <div className="meta" style={{marginTop:8, color:'#ff9b9b'}}>Error: {error}</div>}
       </div>
 
+      {/* Grid */}
       <div className="grid">
         {filtered.map(t => (
           <article key={t.id} className="card">
@@ -321,11 +323,12 @@ function TasksView() {
         ))}
       </div>
 
+      {/* Form nueva tarea */}
       <div className="panel" style={{ marginTop: 16 }}>
         <h4 style={{ marginTop: 0, marginBottom: 12 }}>Nueva tarea</h4>
         <form className="form" onSubmit={onCreate}>
           <div className="row">
-            <input className="input" placeholder="Título" required value={titulo} onChange={e=>setTitulo(e.target.value)} />
+            <input id="titulo-input" className="input" placeholder="Título" required value={titulo} onChange={e=>setTitulo(e.target.value)} />
             <input className="input" type="date" value={fecha} onChange={e=>setFecha(e.target.value)} />
           </div>
           <div className="row">
@@ -354,21 +357,57 @@ function TasksView() {
   );
 }
 
-
-// ============================== VISTA: Clientes ==============================
+// ===================== VISTA: CLIENTES =====================
 function ClientsView(){
-  // ⚠️ Sustituye MOCK_CLIENTS por tus datos (Supabase)
-  const clients = MOCK_CLIENTS;
-
+  const { clients, loading, error, refresh, setClients } = useClients();
   const [q, setQ] = useState('');
+
   const filtered = useMemo(()=> {
     const t = q.trim().toLowerCase();
     if(!t) return clients;
     return clients.filter(c =>
       c.empresa.toLowerCase().includes(t) ||
-      (c.contacto || '').toLowerCase().includes(t)
+      (c.contacto || '').toLowerCase().includes(t) ||
+      (c.email || '').toLowerCase().includes(t)
     );
   }, [q, clients]);
+
+  // form nuevo cliente
+  const [empresa, setEmpresa] = useState('');
+  const [contacto, setContacto] = useState('');
+  const [telefono, setTelefono] = useState('');
+  const [email, setEmail] = useState('');
+  const [direccion, setDireccion] = useState('');
+  const [notas, setNotas] = useState('');
+
+  const onCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const payload: Omit<ClientRow,'id'> = {
+        empresa,
+        contacto: contacto || null,
+        telefono: telefono || null,
+        email: email || null,
+        direccion: direccion || null,
+        notas: notas || null
+      };
+      const newRow = await createClient(payload);
+      setClients(prev => [newRow, ...prev]);
+      setEmpresa(''); setContacto(''); setTelefono(''); setEmail(''); setDireccion(''); setNotas('');
+    } catch (err: any) {
+      alert('Error creando cliente: ' + err.message);
+    }
+  };
+
+  const onDelete = async (id: string) => {
+    if (!confirm('¿Borrar este cliente?')) return;
+    try{
+      await deleteClient(id);
+      setClients(prev => prev.filter(c => c.id !== id));
+    } catch (err:any){
+      alert('Error borrando: ' + err.message);
+    }
+  };
 
   return (
     <>
@@ -378,9 +417,12 @@ function ClientsView(){
           <input
             value={q}
             onChange={e => setQ(e.target.value)}
-            placeholder="Buscar cliente, contacto…"
+            placeholder="Buscar cliente, contacto o email…"
           />
+          <button className="icon-btn" title="Refrescar" onClick={refresh}><RefreshCw size={16}/></button>
         </div>
+        {loading && <div className="meta" style={{marginTop:8}}>Cargando…</div>}
+        {error && <div className="meta" style={{marginTop:8, color:'#ff9b9b'}}>Error: {error}</div>}
       </div>
 
       <div className="grid">
@@ -399,8 +441,8 @@ function ClientsView(){
             {c.notas && <div className="meta">{c.notas}</div>}
 
             <div className="row-actions">
-              <button className="btn"> <Edit3 size={16}/> Editar</button>
-              <button className="btn danger"><Trash2 size={16}/> Borrar</button>
+              {/* TODO: editar si quieres */}
+              <button className="btn danger" onClick={()=>onDelete(c.id)}><Trash2 size={16}/> Borrar</button>
             </div>
           </article>
         ))}
@@ -408,17 +450,17 @@ function ClientsView(){
 
       <div className="panel" style={{ marginTop: 16 }}>
         <h4 style={{ marginTop: 0, marginBottom: 12 }}>Nuevo cliente</h4>
-        <form className="form" onSubmit={(e)=>{e.preventDefault(); /* TODO: crear en Supabase */}}>
+        <form className="form" onSubmit={onCreate}>
           <div className="row">
-            <input className="input" placeholder="Empresa" required />
-            <input className="input" placeholder="Contacto" />
+            <input className="input" placeholder="Empresa" required value={empresa} onChange={e=>setEmpresa(e.target.value)} />
+            <input className="input" placeholder="Contacto" value={contacto} onChange={e=>setContacto(e.target.value)} />
           </div>
           <div className="row">
-            <input className="input" placeholder="Teléfono" />
-            <input className="input" placeholder="Email" type="email" />
+            <input className="input" placeholder="Teléfono" value={telefono} onChange={e=>setTelefono(e.target.value)} />
+            <input className="input" placeholder="Email" type="email" value={email} onChange={e=>setEmail(e.target.value)} />
           </div>
-          <input className="input" placeholder="Dirección" />
-          <textarea className="textarea" placeholder="Notas" />
+          <input className="input" placeholder="Dirección" value={direccion} onChange={e=>setDireccion(e.target.value)} />
+          <textarea className="textarea" placeholder="Notas" value={notas} onChange={e=>setNotas(e.target.value)} />
           <div className="row-actions">
             <button className="btn ok" type="submit"><Plus size={16}/> Guardar</button>
           </div>
@@ -427,9 +469,12 @@ function ClientsView(){
     </>
   );
 }
-// ===== Montar la App (Vite/React) =====
+
+// ===== MONTAJE DE LA APP =====
 const container = document.getElementById('root');
 if (container) {
   createRoot(container).render(<MainApp />);
+}
+
 
 
